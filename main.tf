@@ -8,11 +8,9 @@ resource "aws_instance" "example" {
   ami           = "ami-0c55b159cbfafe1f0"
   instance_type = "t2.micro"
 
-  provisioner "remote-exec" {
-    inline = [
-      "sudo apt update",
-      "sudo apt install -y nginx"
-    ]
+  provisioner "file" {
+    source      = "script.sh"
+    destination = "/home/ubuntu/script.sh"
   }
 
   connection {
