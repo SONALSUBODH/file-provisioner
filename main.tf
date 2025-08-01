@@ -4,35 +4,30 @@ provider "aws" {
   secret_key = ""
 }
 
-resource "aws_key_pair" "example" {
-  key_name   = "key"
-  public_key = file("~/.ssh/id_rsa.pub")
-}
+resource "aws_instance" "example" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.micro"
 
-resource "aws_instance" "web" {
-  ami             = "ami-0f918f7e67a3323f0"
-  instance_type   = "t2 micro"
-  key_name        = aws_key_pair.example.key_name
-  security_groups = [aws_security_group.tf_sg.name]
-}
-provisioner "file" {
-    source      = "script.sh"
-    destination = "/ home/ubuntu/script.sh"
-    }
-}
-connection {
-   type         = "ssh"
-   user         = "ubuntu"
-   private_key  = file("~/.ssh/id_rsa")
-   host         = self.public_ip
-   }
+  provisioner "remote-exec" {
+    inline = [
+      "sudo apt update",
+      "sudo apt install -y nginx"
+    ]
+  }
+
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file("~/.ssh/id_rsa")
+    host        = self.public_ip
+  }
 }
 resource "aws_security_group" "tf_sg" {
-  name        = "tf_sg"
+  name        = "tf_sg11"
   description = "Allow HTTPS to web server"
   vpc_id      = "vpc-05bdcc8880aab85ab"
-}
- ingress {
+
+  ingress {
     description = "TLS from VPC"
     from_port   = 80
     to_port     = 80
@@ -44,15 +39,8 @@ resource "aws_security_group" "tf_sg" {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    
   }
-ingress {
-    description = "TLS from VPC"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-}
   egress {
     from_port   = 0
     to_port     = 0
